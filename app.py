@@ -1,16 +1,11 @@
-import cv2
 import streamlit as st
 from PIL import Image
 import pillow_heif
 
 def jpg_to_heif(input_image):
-    cv_img = cv2.imread(input_image, cv2.IMREAD_UNCHANGED)
-    heif_file = pillow_heif.from_bytes(
-    mode="BGR",
-    size=(cv_img.shape[1], cv_img.shape[0]),
-    data=bytes(cv_img)
-    )
-    return heif_file
+    cv_img = Image.open(input_image)
+    heif = pillow_heif.from_pillow(cv_img)
+    return heif
 
 def main():
     st.title("JPG to HEIF Converter")
