@@ -12,7 +12,7 @@ To get started with this project, follow the steps below:
 
 1. Clone the repository:
     ```bash
-    git clone <repository-url>
+    git clone https://github.com/Devasy23/JPG2HEIF
     ```
 
 
@@ -43,3 +43,4 @@ To convert a JPG image to HEIF, use the following command:
 ```bash
 streamlit run app.py
 ```
+or using the [link](https://jpgtoheifconverter.streamlit.app/)
