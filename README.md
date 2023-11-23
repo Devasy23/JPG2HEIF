@@ -44,3 +44,9 @@ To convert a JPG image to HEIF, use the following command:
 streamlit run app.py
 ```
 or using the [link](https://jpgtoheifconverter.streamlit.app/)
+
+
+## Images:
+![image](https://github.com/Devasy23/JPG2HEIF/assets/110348311/f1c281bb-a828-4085-ba48-f8cddd6af802)
+![image](https://github.com/Devasy23/JPG2HEIF/assets/110348311/9fd50cc0-d519-4bdb-90b3-1f3848498906)
+
