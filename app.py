@@ -39,7 +39,7 @@ def main():
                 )
         
     elif choice == "Batch Conversion":
-        uploaded_files = st.file_uploader("Choose Images", accept_multiple_files=True)
+        uploaded_files = st.file_uploader("Choose Images", accept_multiple_files=True, type=["jpg", "jpeg", "png", "gif", "bmp"])
 
         if uploaded_files is not None:
             for uploaded_file in uploaded_files:
