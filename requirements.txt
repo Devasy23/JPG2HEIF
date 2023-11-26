@@ -81,7 +81,7 @@ nvidia-cusolver-cu12==11.4.5.107
 nvidia-cusparse-cu12==12.1.0.106
 nvidia-nccl-cu12==2.18.1
 nvidia-nvjitlink-cu12==12.3.52
-nvidia-nvtx-cu12==12.1.105
+nvidia-nvtx-cu12==12.3.101
 opencv-python==4.8.1.78
 overrides==7.4.0
 packaging==23.2
