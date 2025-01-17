@@ -1,70 +1,63 @@
 import streamlit as st
-from PIL import Image
-import pillow_heif
-from streamlit_option_menu import option_menu
-def jpg_to_heif(input_image):
-    cv_img = Image.open(input_image)
-    heif = pillow_heif.from_pillow(cv_img)
-    return heif
+from io import BytesIO
+import zipfile
+import time
+from converter import jpg_to_heif_buffer
+
+st.set_page_config(page_title="Image Converter", layout="centered")
 
 def main():
-    st.title("JPG to HEIF Converter")
-    choice = option_menu("",["Single", "Batch Conversion"], orientation="horizontal")
-    
-    if choice == "Single":
-    
-        uploaded_file = st.file_uploader("Choose a JPG file", type=["jpg", "jpeg"])
+    st.title("JPG to HEIF/HEIC Converter")
+    tab1, tab2 = st.tabs(["Single Image", "Batch Images"])
+    with tab1:
+        uploaded_file = st.file_uploader("Upload JPG file", type=["jpg", "jpeg"])
+        if uploaded_file:
+            st.image(uploaded_file, caption="Original Image", use_column_width=True)
 
-        if uploaded_file is not None:
-            st.image(uploaded_file, caption="Uploaded Image", use_column_width=True)
-            fname = uploaded_file.name.split(".")[0]
-            
             if st.button("Convert and Download"):
-                # save uploaded file to temp dir
-                with open("temp.jpg", "wb") as f:
-                    f.write(uploaded_file.getbuffer())
+                with st.spinner("Converting..."):
+                    output_buffer = jpg_to_heif_buffer(uploaded_file.getbuffer())
+                    st.success("Conversion complete!")
                 
-                # convert to heif
-                heif_file = jpg_to_heif("temp.jpg")
-                heif_file.save("temp.heic", format= "HEIF")
-                
-                # download heif file
-                with open("temp.heic", "rb") as f:
-                    bytes = f.read()
                 st.download_button(
-                    label="Download HEIF File",
-                    data=bytes,
-                    file_name=f"{fname}.heic",
-                    mime="application/octet-stream"
+                    "Download HEIF/HEIC File",
+                    output_buffer,
+                    file_name="converted.heic",
+                    mime="image/heif"
                 )
-        
-    elif choice == "Batch Conversion":
-        uploaded_files = st.file_uploader("Choose Images", accept_multiple_files=True, type=["jpg", "jpeg", "png", "gif", "bmp"])
 
-        if uploaded_files is not None:
+    with tab2:
+        uploaded_files = st.file_uploader("Upload Multiple Images", type=["jpg", "jpeg"], accept_multiple_files=True)
+
+        if uploaded_files:
+            file_stats = {"original_size": 0, "converted_size": 0}
+            converted_files = {}
+
             for uploaded_file in uploaded_files:
-                st.image(uploaded_file, caption=f"Uploaded Image: {uploaded_file.name}", use_column_width=True)
-                fname = uploaded_file.name.split(".")[0]
-                
-                if st.button(f"Convert and Download {uploaded_file.name}"):
-                    # save uploaded file to temp dir
-                    with open(f"{fname}.jpg", "wb") as f:
-                        f.write(uploaded_file.getbuffer())
-                    
-                    # convert to heif
-                    heif_file = jpg_to_heif(f"{fname}.jpg")
-                    heif_file.save(f"{fname}.heic", format= "HEIF")
-                    
-                    # download heif file
-                    with open(f"{fname}.heic", "rb") as f:
-                        bytes = f.read()
-                    st.download_button(
-                        label=f"Download HEIF File: {fname}.heic",
-                        data=bytes,
-                        file_name=f"{fname}.heic",
-                        mime="application/octet-stream"
-                    )
-            
+                with st.spinner(f"Converting {uploaded_file.name}..."):
+                    output_buffer = jpg_to_heif_buffer(uploaded_file.getbuffer())
+                    file_stats["original_size"] += uploaded_file.size
+                    file_stats["converted_size"] += output_buffer.getbuffer().nbytes
+                    converted_files[uploaded_file.name] = output_buffer
+
+            # Show stats
+            st.metric("Original Size", f"{file_stats['original_size'] / 1e6:.2f} MB")
+            st.metric("Converted Size", f"{file_stats['converted_size'] / 1e6:.2f} MB")
+            st.metric("Space Saved", f"{(file_stats['original_size'] - file_stats['converted_size']) / 1e6:.2f} MB")
+
+            # Download All as ZIP
+            zip_buffer = BytesIO()
+            with zipfile.ZipFile(zip_buffer, "w") as zipf:
+                for fname, fbuffer in converted_files.items():
+                    zipf.writestr(fname.replace(".jpg", ".heic"), fbuffer.getvalue())
+            zip_buffer.seek(0)
+
+            st.download_button(
+                "Download All as ZIP",
+                data=zip_buffer,
+                file_name="converted_images.zip",
+                mime="application/zip"
+            )
 
 if __name__ == "__main__":
     main()

@@ -1,1 +1,7 @@
 venv/
+.pytest_cache/
+__pycache__/
+temp.heic
+temp.jpg
+.vscode/
+*.pyc
