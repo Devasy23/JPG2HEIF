@@ -3,6 +3,8 @@ from io import BytesIO
 import zipfile
 import time
 from converter import jpg_to_heif_buffer
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
 
 st.set_page_config(page_title="Image Converter", layout="centered")
 
@@ -12,6 +14,7 @@ def main():
     with tab1:
         uploaded_file = st.file_uploader("Upload JPG file", type=["jpg", "jpeg"])
         if uploaded_file:
+            filename = uploaded_file.name
             st.image(uploaded_file, caption="Original Image", use_column_width=True)
 
             if st.button("Convert and Download"):
@@ -22,7 +25,7 @@ def main():
                 st.download_button(
                     "Download HEIF/HEIC File",
                     output_buffer,
-                    file_name="converted.heic",
+                    file_name=f"{filename.rsplit('.', 1)[0]}.heic",
                     mime="image/heif"
                 )
 
@@ -33,12 +36,25 @@ def main():
             file_stats = {"original_size": 0, "converted_size": 0}
             converted_files = {}
 
-            for uploaded_file in uploaded_files:
-                with st.spinner(f"Converting {uploaded_file.name}..."):
-                    output_buffer = jpg_to_heif_buffer(uploaded_file.getbuffer())
-                    file_stats["original_size"] += uploaded_file.size
-                    file_stats["converted_size"] += output_buffer.getbuffer().nbytes
-                    converted_files[uploaded_file.name] = output_buffer
+            progress_bar = st.progress(0)
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            executor = ThreadPoolExecutor()
+
+            async def process_file(uploaded_file):
+                output_buffer = await loop.run_in_executor(executor, jpg_to_heif_buffer, uploaded_file.getbuffer())
+                return uploaded_file.name, output_buffer, uploaded_file.size, output_buffer.getbuffer().nbytes
+
+            async def process_files(files):
+                tasks = [process_file(file) for file in files]
+                for i, task in enumerate(asyncio.as_completed(tasks)):
+                    fname, output_buffer, original_size, converted_size = await task
+                    file_stats["original_size"] += original_size
+                    file_stats["converted_size"] += converted_size
+                    converted_files[fname] = output_buffer
+                    progress_bar.progress((i + 1) / len(files))
+
+            loop.run_until_complete(process_files(uploaded_files))
 
             # Show stats
             st.metric("Original Size", f"{file_stats['original_size'] / 1e6:.2f} MB")
