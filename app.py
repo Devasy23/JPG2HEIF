@@ -2,10 +2,52 @@ import streamlit as st
 from PIL import Image
 import pillow_heif
 from streamlit_option_menu import option_menu
+import click
+import os
+import zipfile
+
 def jpg_to_heif(input_image):
     cv_img = Image.open(input_image)
     heif = pillow_heif.from_pillow(cv_img)
     return heif
+
+def convert_folder_to_heif(input_folder, output_folder):
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
+    for filename in os.listdir(input_folder):
+        if filename.endswith(".jpg") or filename.endswith(".jpeg"):
+            input_path = os.path.join(input_folder, filename)
+            output_path = os.path.join(output_folder, filename.rsplit(".", 1)[0] + ".heic")
+            heif_file = jpg_to_heif(input_path)
+            heif_file.save(output_path, format="HEIF")
+
+def convert_zip_to_heif(input_zip, output_folder):
+    with zipfile.ZipFile(input_zip, 'r') as zip_ref:
+        zip_ref.extractall(output_folder)
+    convert_folder_to_heif(output_folder, output_folder)
+
+@click.group()
+def cli():
+    pass
+
+@cli.command()
+@click.argument('input_image')
+@click.argument('output_image')
+def convert(input_image, output_image):
+    heif_file = jpg_to_heif(input_image)
+    heif_file.save(output_image, format="HEIF")
+
+@cli.command()
+@click.argument('input_folder')
+@click.argument('output_folder')
+def convert_folder(input_folder, output_folder):
+    convert_folder_to_heif(input_folder, output_folder)
+
+@cli.command()
+@click.argument('input_zip')
+@click.argument('output_folder')
+def convert_zip(input_zip, output_folder):
+    convert_zip_to_heif(input_zip, output_folder)
 
 def main():
     st.title("JPG to HEIF Converter")
@@ -64,7 +106,7 @@ def main():
                         file_name=f"{fname}.heic",
                         mime="application/octet-stream"
                     )
-            
 
 if __name__ == "__main__":
+    cli()
     main()

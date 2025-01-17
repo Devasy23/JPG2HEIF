@@ -45,8 +45,41 @@ streamlit run app.py
 ```
 or using the [link](https://jpgtoheifconverter.streamlit.app/)
 
+### CLI Tools
+
+You can also use the CLI tools to convert files, folders, and zip archives:
+
+- Convert a single file:
+    ```bash
+    jpg2heif convert <input_image> <output_image>
+    ```
+
+- Convert a folder:
+    ```bash
+    jpg2heif convert_folder <input_folder> <output_folder>
+    ```
+
+- Convert a zip archive:
+    ```bash
+    jpg2heif convert_zip <input_zip> <output_folder>
+    ```
+
+## Running Tests
+
+To run the tests, use the following command:
+
+```bash
+pytest
+```
+
+## Installing from PyPI
+
+You can install the package from PyPI using the following command:
+
+```bash
+pip install jpg2heif
+```
 
 ## Images:
 ![image](https://github.com/Devasy23/JPG2HEIF/assets/110348311/f1c281bb-a828-4085-ba48-f8cddd6af802)
 ![image](https://github.com/Devasy23/JPG2HEIF/assets/110348311/9fd50cc0-d519-4bdb-90b3-1f3848498906)
-
