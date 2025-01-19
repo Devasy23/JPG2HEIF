@@ -1,8 +1,12 @@
 from setuptools import setup, find_packages
 
+# Read the version from the VERSION file
+with open('VERSION') as version_file:
+    version = version_file.read().strip()
+
 setup(
     name='jpg2heif',
-    version='0.1.0',
+    version=version,
     packages=find_packages(),
     install_requires=[
         'Pillow',
