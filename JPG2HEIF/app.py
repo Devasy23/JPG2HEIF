@@ -2,7 +2,7 @@ import streamlit as st
 from io import BytesIO
 import zipfile
 import time
-from converter import jpg_to_heif_buffer
+from .converter import jpg_to_heif_buffer
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
 
