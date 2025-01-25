@@ -22,11 +22,22 @@ jobs:
       - name: Install bump2version
         run: pip install bump2version
 
-      - name: Read and bump version
+      - name: Determine bump type
+        id: set_bump_type
+        run: |
+          # Set the bump type based on input or default to patch
+          if [[ "${{ github.event.inputs.bump_type }}" != "" ]]; then
+            echo "bump_type=${{ github.event.inputs.bump_type }}" >> $GITHUB_ENV
+          else
+            echo "bump_type=patch" >> $GITHUB_ENV
+          fi
+        shell: bash
+
+      - name: Bump the version
         id: bump_version
         run: |
           echo "Current version: $(cat VERSION)"
-          bump2version ${{ github.event.inputs.release_type }} --allow-dirty --current-version $(cat VERSION) VERSION
+          bump2version ${{ env.bump_type }} --allow-dirty --current-version $(cat VERSION) VERSION
           echo "New version: $(cat VERSION)"
           echo "version=$(cat VERSION)" >> $GITHUB_ENV
 
