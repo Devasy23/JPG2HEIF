@@ -1,6 +1,6 @@
 import argparse
 import os
-from converter import jpg_to_heif_buffer
+from .converter import jpg_to_heif_buffer
 from PIL import Image
 import numpy as np
 from skimage.metrics import structural_similarity as ssim
