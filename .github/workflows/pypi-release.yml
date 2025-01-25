@@ -7,23 +7,25 @@ on:
   workflow_dispatch:
 
 jobs:
-  extract-tag:  
-    runs-on: ubuntu-latest  
-    outputs:  
-      version: ${{ steps.extract_tag.outputs.tag }}  
-    steps:  
+  extract-tag:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.extract_tag.outputs.tag }}
+    steps:
       - uses: actions/checkout@v4
-      - id: extract_tag  
-        name: Extract tag name  
-        run: echo "tag=$(echo $GITHUB_REF | cut -d / -f 3)" >> $GITHUB_ENV
+      - id: extract_tag
+        name: Extract tag name
+        run: |
+          TAG=$(echo $GITHUB_REF | cut -d / -f 3)
+          echo "tag=$TAG" >> $GITHUB_ENV
 
   build-and-publish-test-pypi:
     needs: extract-tag
     runs-on: ubuntu-latest
-    environment: 
+    environment:
       name: pypi
     permissions:
-      id-token: write  # IMPORTANT: mandatory for trusted publishing
+      id-token: write
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python 3.9
@@ -32,42 +34,31 @@ jobs:
           python-version: "3.9"
       - name: Install dependencies
         run: python3 -m pip install setuptools wheel twine semver packaging bump2version
-      - name: Determine new version
-        id: new_version
+      - name: Get Current Version and Bump
+        id: bump_version
         run: |
+          CURRENT_VERSION=$(python3 setup.py --version)
           NEW_VERSION=$(bump2version --dry-run --list patch | grep new_version= | sed -r s,"^.*=",,)
           echo "new_version=$NEW_VERSION" >> $GITHUB_ENV
       - name: Bump version
-        run: bump2version patch --new-version ${{ env.new_version }} --allow-dirty
-      - name: Get correct version for TestPyPI release  
-        id: check_version  
-        run: |  
-          VERSION=$(python3 setup.py --version)  
-          PACKAGE_NAME="jpg2heif-test"
-          echo "Checking if $VERSION for $PACKAGE_NAME exists on TestPyPI"  
-          NEW_VERSION=$(python3 .github/workflows/build_utils/test_version.py $PACKAGE_NAME $VERSION)  
-          echo "Version to be used for TestPyPI release: $NEW_VERSION"  
-          echo "version=$NEW_VERSION" >> $GITHUB_ENV
-      - name: Update version in setup.py
-        run: sed -i 's/version="[^"]*"/version="${{ env.version }}"/' setup.py
-      - name: Update version in pyproject.toml
-        run: sed -i 's/version = "[^"]*"/version = "${{ env.version }}"/' pyproject.toml        
-      - name: Update package name in setup.py
-        run: sed -i 's/name="[^"]*"/name="jpg2heif-test"/' setup.py 
-      - name: Update package name in pyproject.toml
-        run: sed -i 's/name = "[^"]*"/name = "jpg2heif-test"/' pyproject.toml  
+        run: |
+          bump2version patch --new-version ${{ env.new_version }} --allow-dirty
+      - name: Update package metadata
+        run: |
+          sed -i 's/version="[^"]*"/version="${{ env.new_version }}"/' setup.py
+          sed -i 's/version = "[^"]*"/version = "${{ env.new_version }}"/' pyproject.toml
       - name: Build a binary wheel
         run: python3 setup.py sdist bdist_wheel
       - name: Publish distribution 📦 to test-PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
-        with: 
+        with:
           repository-url: https://test.pypi.org/legacy/
           password: ${{ secrets.TEST_PYPI_API_TOKEN }}
 
   build-and-publish-pypi:
-    needs: [extract-tag, build-and-publish-test-pypi]
+    needs: build-and-publish-test-pypi
     runs-on: ubuntu-latest
-    environment: 
+    environment:
       name: pypi
     permissions:
       id-token: write
@@ -79,25 +70,17 @@ jobs:
           python-version: "3.9"
       - name: Install dependencies
         run: python3 -m pip install setuptools wheel twine bump2version
-      - name: Determine new version
-        id: new_version
-        run: |
-          NEW_VERSION=$(bump2version --dry-run --list patch | grep new_version= | sed -r s,"^.*=",,)
-          echo "new_version=$NEW_VERSION" >> $GITHUB_ENV
       - name: Bump version
-        run: bump2version patch --new-version ${{ env.new_version }} --allow-dirty
-      - name: Update version in setup.py
-        run: sed -i 's/version="[^"]*"/version="${{ env.tag }}"/' setup.py
-      - name: Update version in pyproject.toml
-        run: sed -i 's/version = "[^"]*"/version = "${{ env.tag }}"/' pyproject.toml
-      - name: Update package name in setup.py  
-        run: sed -i 's/name="[^"]*"/name="jpg2heif"/' setup.py
-      - name: Update package name in pyproject.toml
-        run: sed -i 's/name = "[^"]*"/name = "jpg2heif"/' pyproject.toml
+        run: |
+          bump2version patch --new-version ${{ env.tag }} --allow-dirty
+      - name: Update package metadata
+        run: |
+          sed -i 's/version="[^"]*"/version="${{ env.tag }}"/' setup.py
+          sed -i 's/version = "[^"]*"/version = "${{ env.tag }}"/' pyproject.toml
       - name: Build a binary wheel
         run: python3 setup.py sdist bdist_wheel
       - name: Publish distribution 📦 to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
-        with: 
+        with:
           password: ${{ secrets.PYPI_API_TOKEN }}
           attestations: false
