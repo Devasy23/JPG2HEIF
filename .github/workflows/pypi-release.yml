@@ -1,6 +1,10 @@
 name: Publish Python 🐍 distributions 📦 to PyPI
+# name: Bump Version and Create PR
 
 on:
+  push:
+    branches:
+      - master
   workflow_dispatch:
     inputs:
       release_type:
@@ -22,36 +26,30 @@ jobs:
       - name: Install bump2version
         run: pip install bump2version
 
-      - name: Read and bump version
+      - name: Bump the version
         id: bump_version
         run: |
           echo "Current version: $(cat VERSION)"
-          bump2version ${{ github.event.inputs.release_type }} --allow-dirty --current-version $(cat VERSION) VERSION
+          bump2version patch --allow-dirty --current-version $(cat VERSION) VERSION
           echo "New version: $(cat VERSION)"
           echo "version=$(cat VERSION)" >> $GITHUB_ENV
 
-      - name: Create and push branch
+      - name: Commit version bump
         run: |
-          BRANCH_NAME="bump-version-${{ env.version }}"
-          git checkout -b $BRANCH_NAME
           git config user.name "GitHub Actions Bot"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add VERSION
           git commit -m "Bump version to ${{ env.version }}"
-          git push origin $BRANCH_NAME
+          git push origin HEAD:${GITHUB_REF#refs/heads/}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Create pull request
-        uses: peter-evans/create-pull-request@v5
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          branch: "bump-version-${{ env.version }}"
-          commit-message: "Bump version to ${{ env.version }}"
-          title: "Bump version to ${{ env.version }}"
-          body: |
-            ## Version update
-            This pull request bumps the project version to `${{ env.version }}`. Please review and merge.
+      # - name: Publish to PyPI (Optional)
+      #   if: ${{ github.ref_name == 'master' }}
+      #   uses: pypa/gh-action-pypi-publish@v1
+      #   with:
+      #     username: __token__
+      #     password: ${{ secrets.PYPI_API_TOKEN }}
 
 
   build-and-publish-test-pypi:
