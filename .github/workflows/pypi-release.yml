@@ -29,13 +29,29 @@ jobs:
         run: |
           bump2version ${{ github.event.inputs.release_type }} --current-version $(cat VERSION) --allow-dirty --new-version | tail -n 1 > VERSION
           cat VERSION
-      - name: Commit and push new version
+      - name: Create branch for version bump
+        id: create_branch
         run: |
+          BRANCH_NAME="bump-version-$(cat VERSION)"
+          git checkout -b $BRANCH_NAME
           git config user.name "GitHub Actions Bot"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add VERSION
           git commit -m "Bump version to $(cat VERSION)"
-          git push
+          git push origin $BRANCH_NAME
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Create a pull request
+        id: create_pr
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: bump-version-$(cat VERSION)
+          commit-message: "Bump version to $(cat VERSION)"
+          title: "Bump version to $(cat VERSION)"
+          body: |
+            ## Version update
+            This pull request bumps the project version to `$(cat VERSION)`. Please review and merge.
       - id: get_version
         run: echo "::set-output name=version::$(cat VERSION)"
 
