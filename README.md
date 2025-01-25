@@ -38,11 +38,41 @@ To get started with this project, follow the steps below:
 
 ## Usage
 
-To convert a JPG image to HEIF, use the following command:
+### Using the CLI
+
+To convert a JPG image to HEIF using the command line interface, use the following command:
+
+```bash
+jpg2heif file file.jpg file.heic
+```
+
+You can also convert a folder of images or a zip file:
+
+```bash
+jpg2heif folder input_folder output_folder
+jpg2heif zip input.zip output.zip
+```
+
+To benchmark the conversion algorithm:
+
+```bash
+jpg2heif file file.jpg file.heic --benchmark
+```
+
+To compare SSIM index of other converted images with the original:
+
+```bash
+jpg2heif file original.jpg --compare converted1.heic converted2.heic
+```
+
+### Using the Streamlit App
+
+To convert a JPG image to HEIF using the Streamlit app, use the following command:
 
 ```bash
 streamlit run app.py
 ```
+
 or using the [link](https://jpgtoheifconverter.streamlit.app/)
 
 
