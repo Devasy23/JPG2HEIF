@@ -5,31 +5,50 @@ on:
     branches:
       - main
   workflow_dispatch:
+    inputs:
+      release_type:
+        description: 'Release type (patch, minor, major)'
+        required: true
+        default: patch
 
 jobs:
-  read-version:
+  bump-version:
     runs-on: ubuntu-latest
     outputs:
-      version: ${{ steps.extract_version.outputs.version }}
+      version: ${{ steps.get_version.outputs.version }}
     steps:
       - uses: actions/checkout@v4
-      - id: extract_version
-        name: Extract version from VERSION file
+      - name: Set up Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: "3.9"
+      - name: Install bump2version
+        run: pip install bump2version
+      - name: Bump version
+        id: bump_version
         run: |
-          VERSION=$(cat VERSION)
-          echo "version=$VERSION" >> $GITHUB_ENV
-          echo "::set-output name=version::$VERSION"
+          bump2version ${{ github.event.inputs.release_type }} --current-version $(cat VERSION) --allow-dirty --new-version | tail -n 1 > VERSION
+          cat VERSION
+      - name: Commit and push new version
+        run: |
+          git config user.name "GitHub Actions Bot"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add VERSION
+          git commit -m "Bump version to $(cat VERSION)"
+          git push
+      - id: get_version
+        run: echo "::set-output name=version::$(cat VERSION)"
 
   build-and-publish-test-pypi:
-    needs: read-version
+    needs: bump-version
     runs-on: ubuntu-latest
     environment:
       name: pypi
     permissions:
-      id-token: write  # Mandatory for trusted publishing
+      id-token: write
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Python 3.9
+      - name: Set up Python
         uses: actions/setup-python@v3
         with:
           python-version: "3.9"
@@ -41,7 +60,7 @@ jobs:
           twine upload --repository-url https://test.pypi.org/legacy/ dist/* -u __token__ -p ${{ secrets.TEST_PYPI_API_TOKEN }}
 
   build-and-publish-pypi:
-    needs: [read-version, build-and-publish-test-pypi]
+    needs: build-and-publish-test-pypi
     runs-on: ubuntu-latest
     environment:
       name: pypi
@@ -49,7 +68,7 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Python 3.9
+      - name: Set up Python
         uses: actions/setup-python@v3
         with:
           python-version: "3.9"
