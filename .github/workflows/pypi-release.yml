@@ -1,4 +1,5 @@
 name: Publish Python 🐍 distributions 📦 to PyPI
+# name: Bump Version and Create PR
 
 on:
   workflow_dispatch:
@@ -32,6 +33,8 @@ jobs:
 
       - name: Create and push branch
         run: |
+          git fetch origin main:main
+          git checkout main
           BRANCH_NAME="bump-version-${{ env.version }}"
           git checkout -b $BRANCH_NAME
           git config user.name "GitHub Actions Bot"
@@ -47,7 +50,7 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           branch: "bump-version-${{ env.version }}"
-          commit-message: "Bump version to ${{ env.version }}"
+          base: "main"  # Ensure 'base' is the default branch
           title: "Bump version to ${{ env.version }}"
           body: |
             ## Version update
