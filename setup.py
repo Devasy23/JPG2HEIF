@@ -15,7 +15,7 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'jpg2heif=cli:main',
+            'jpg2heif=JPG2HEIF.cli:main',
         ],
     },
     author='Devasy Patel',
