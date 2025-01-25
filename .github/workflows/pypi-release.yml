@@ -44,12 +44,12 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Publish to PyPI (Optional)
-        if: ${{ github.ref_name == 'master' }}
-        uses: pypa/gh-action-pypi-publish@v1
-        with:
-          username: __token__
-          password: ${{ secrets.PYPI_API_TOKEN }}
+      # - name: Publish to PyPI (Optional)
+      #   if: ${{ github.ref_name == 'master' }}
+      #   uses: pypa/gh-action-pypi-publish@v1
+      #   with:
+      #     username: __token__
+      #     password: ${{ secrets.PYPI_API_TOKEN }}
 
 
   build-and-publish-test-pypi:
