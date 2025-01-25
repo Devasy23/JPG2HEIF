@@ -85,6 +85,6 @@ jobs:
       - name: Build a binary wheel
         run: python3 setup.py sdist bdist_wheel
       - name: Publish distribution 📦 to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
+        run: python3 -m twine upload dist/*
         with: 
           attestations: false
